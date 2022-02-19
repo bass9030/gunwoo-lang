@@ -23,25 +23,26 @@ function runGunwoo_lang(code) {
         const textlog = line.match(/^병(.+)신$/);
         const goto = line.match(/^년.+$/);
         const conditi = line.match(/^씹덕(.+)아!(.+)/);
-        if (variable) {
+        if (variable) { // 변수
             console.log(variable[1], gunnumToNumber(line.replace(/거(어+)언/, '')));
             variables[variable[1].length] = gunnumToNumber(line.replace(/거(어+)언/, ''));
-        }else if(numlog) {
+        }else if(numlog) { // 숫자 콘솔 출력
             console.log(gunnumToNumber(line.split('새끼')[1].split('야')[0]));
-        }else if(textlog) {
+        }else if(textlog) { // 텍스트 콘솔 출력
             console.log(String.fromCharCode(gunnumToNumber(line.split('병')[1].split('신')[0])));
-        }else if(readline) {
+        }else if(readline) { // 사용자 입력
             variables[readline[1].length] = readlineSync.question('');
-        }else if(exit) {
+        }else if(exit) { // 종료
+            console.log(gunnumToNumber(line.split('나가뒤져라')[1]))
             process.exit(gunnumToNumber(line.split('나가뒤져라')[1]));
-        }else if(goto) {
+        }else if(goto) { // 줄 이동
             let tmp = gunnumToNumber(line.split('년')[1]) - 1;
             if(tmp >= 0) {
                 i = tmp;
             }else{
                 throw new Error('올바르지 않은 라인: "' + line + '"');
             }
-        }else if(conditi) {
+        }else if(conditi) { // 조건문
             const cond = gunnumToNumber(line.split('씹덕')[1].split('아!')[0]);
             const run = line.split('아!')[1];
             if(cond == 0) runGunwoo_lang(run);
