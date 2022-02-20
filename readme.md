@@ -27,7 +27,7 @@
 거어어어어언~~~~ ~~
 병ㅇ우~ㅇㅇㅇㅇ우신
 ```
-(rycont/umjunsik-lang)[https://github.com/rycont/umjunsik-lang]에 영감을 받아 만들었습니다
+[rycont/umjunsik-lang](https://github.com/rycont/umjunsik-lang)에 영감을 받아 만들었습니다
 ~~건우야 미안하다~~
 
 # 문법
