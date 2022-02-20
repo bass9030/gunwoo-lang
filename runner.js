@@ -14,8 +14,8 @@ function runGunwoo_lang(code) {
     else code = code.split('\n');
     for(let i = 0; i < code.length; i++) {
         const line = code[i].split('응아니야')[0];
-    
         if(line.length == 0) continue;
+        //console.log(i+1, line);
         const variable = line.match(/거(어+)언(.+)/);
         const numlog = line.match(/^새끼(.+)야$/);
         const exit = line.match(/^나가뒤져라(.+)$/)
@@ -23,31 +23,34 @@ function runGunwoo_lang(code) {
         const textlog = line.match(/^병(.+)신$/);
         const goto = line.match(/^년.+$/);
         const conditi = line.match(/^씹덕(.+)아!(.+)/);
-        if (variable) { // 변수
-            console.log(variable[1], gunnumToNumber(line.replace(/거(어+)언/, '')));
+        if(conditi) { // 조건문
+            const cond = gunnumToNumber(line.split('씹덕')[1].split('아!')[0]);
+            const run = line.split('아!')[1];
+            if(cond == 0) {
+                runGunwoo_lang(run);
+            }
+        }else if (variable) { // 변수
             variables[variable[1].length] = gunnumToNumber(line.replace(/거(어+)언/, ''));
         }else if(numlog) { // 숫자 콘솔 출력
             console.log(gunnumToNumber(line.split('새끼')[1].split('야')[0]));
         }else if(textlog) { // 텍스트 콘솔 출력
             console.log(String.fromCharCode(gunnumToNumber(line.split('병')[1].split('신')[0])));
         }else if(readline) { // 사용자 입력
-            variables[readline[1].length] = readlineSync.question('');
+            const input = parseInt(readlineSync.question(''));
+            if(!isNaN(input)) variables[readline[1].length] = input;
+            else throw new Error('올바르지 않은 입력: ' + input);
         }else if(exit) { // 종료
-            console.log(gunnumToNumber(line.split('나가뒤져라')[1]))
             process.exit(gunnumToNumber(line.split('나가뒤져라')[1]));
         }else if(goto) { // 줄 이동
-            let tmp = gunnumToNumber(line.split('년')[1]) - 1;
-            if(tmp >= 0) {
+            let tmp = gunnumToNumber(line.split('년')[1]) - 2;
+            console.log(tmp)
+            if(tmp + 2 >= 1 && tmp + 2 <= code.length) {
                 i = tmp;
             }else{
-                throw new Error('올바르지 않은 라인: "' + line + '"');
+                throw new Error('올바르지 않은 라인: "' + (tmp + 2) + '":' + (i+1));
             }
-        }else if(conditi) { // 조건문
-            const cond = gunnumToNumber(line.split('씹덕')[1].split('아!')[0]);
-            const run = line.split('아!')[1];
-            if(cond == 0) runGunwoo_lang(run);
         }else{
-            throw new Error('예기치 않은 문자: "' + line + '"');
+            throw new Error('올바르지 않은 문자: "' + line + '":' + (i+1));
         }
     }
 }
@@ -55,41 +58,73 @@ function runGunwoo_lang(code) {
 function gunnumToNumber(string) {
     let number = [];
     //console.log(`"${string}"`);
-    string.split(' ').forEach(j => {
-        if(j.length == 0) return;
+    if(string.match(/^[~! ]+$/)) {
         let tmp = 0;
-        if(j.match(/^[~! ]+$/)) {
-            j.split('').forEach(e => {
-                switch(e) {
-                    case '~':
-                        tmp += 1;
-                        break;
-                    case '!':
-                        tmp -= 1;
-                        break;
-                    default:
-                        throw new Error('예기치 않은 문자: "' + e + '"');
-                }
-            });
-        }else if(j.match(/(ㅇ+우)((([!~]ㅇ+우)([!~]ㅇ+우)?)+)?/)){
-            // example for j : ㅇ우~ㅇ우!ㅇ우
-            //console.log(j.split('우'));
-            j.split('우').forEach(f => {
-                //example input : ㅇ, ~ㅇ, !ㅇ
-                if(f.length == 0) return;
-                //console.log(`"${f.length}"`);
-                if(f.startsWith('!')) {
-                    tmp -= variables[f.length - 1 + ''];
-                }else if(f.startsWith('~')) {
-                    tmp += variables[f.length - 1 + ''];
-                }else{
-                    tmp += variables[f.length + ''];
-                }
-            })
-        }else{
-            throw new Error('예기치 않은 문자: "' + string + '"');
-        }
+        string.split('').forEach(e => {
+            switch(e) {
+                case '~':
+                    tmp += 1;
+                    break;
+                case '!':
+                    tmp -= 1;
+                    break;
+                case ' ':
+                    number.push(tmp);
+                    tmp = 0;
+                    break
+                default:
+                    throw new Error('예기치 않은 문자: "' + e + '"');
+            }
+        });
         number.push(tmp);
-    })
+    }else if(string.match(/(ㅇ+우)((([! ~]ㅇ+우)([! ~]ㅇ+우)?)+)?/)){
+        // example for j : ㅇ우~ㅇ우!ㅇ우
+        //console.log(j.split('우'));
+        let variableCount = 0;
+        let calc = 0;
+        let sign = '';
+        let ismultiply = false;
+        string.split('').forEach(e => {
+            switch(e) {
+                case 'ㅇ':
+                    ismultiply = false;
+                    variableCount += 1;
+                    break;
+                case '우':
+                    if(!variables[variableCount]) throw new Error('변수가 존재하지 않습니다: ' + 'ㅇ'.repeat(variableCount) + '우');
+                    ismultiply = false;
+                    if(sign == '') {
+                        calc = variables[variableCount];
+                    }else if(sign == '+') {
+                        calc += variables[variableCount];
+                    }else if(sign == '-') {
+                        calc -= variables[variableCount];
+                    }
+                    sign = '';
+                    variableCount = 0;
+                    break;
+                case '~':
+                    ismultiply = true;
+                    sign += '+';
+                    break;
+                case '!':
+                    ismultiply = true;
+                    calc += '-';
+                    break;
+                case ' ':
+                    number.push(calc);
+                    calc = 0;
+                    sign = '';
+                    variableCount = 0;
+                    ismultiply = true;
+                    break;
+            }
+        });
+        if(ismultiply) throw new Error('올바르지 않은 식: "' + string + '"');
+        number.push((calc.length == 0) ? tmp : calc)
+    }else{
+        throw new Error('예기치 않은 문자: "' + string + '"');
+    }
+    //console.log(number)
     return eval(number.join('*'));
 }
