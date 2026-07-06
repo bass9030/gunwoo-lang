@@ -1,15 +1,12 @@
 {
-  "name": "gunwoo-lang",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "nodemon runner.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "readline-sync": "^1.4.10"
-  }
+    "name": "gunwoo-lang",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node runner_new.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
 }
