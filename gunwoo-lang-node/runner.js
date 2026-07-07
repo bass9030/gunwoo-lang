@@ -5,7 +5,6 @@ const { parseArgs } = require("node:util");
 const {
     GunwooError,
     InvalidInputError,
-    InvalidLineError,
     UnknownStatementError,
     UndefinedVariableError,
     InvalidJumpTargetError,

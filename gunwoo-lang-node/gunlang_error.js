@@ -12,12 +12,6 @@ class InvalidInputError extends GunwooError {
     }
 }
 
-class InvalidLineError extends GunwooError {
-    constructor(targetLine, line) {
-        super(`올바르지 않은 라인: "${targetLine}"`, line);
-    }
-}
-
 class UnknownStatementError extends GunwooError {
     constructor(rawLine, line) {
         super(`올바르지 않은 문자: "${rawLine}"`, line);
@@ -51,7 +45,6 @@ class InvalidExpressionError extends GunwooError {
 module.exports = {
     GunwooError,
     InvalidInputError,
-    InvalidLineError,
     InvalidJumpTargetError,
     UnknownStatementError,
     UndefinedVariableError,
