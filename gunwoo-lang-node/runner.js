@@ -1,6 +1,7 @@
 const fs = require("fs");
 const { stdin: input, stdout: output } = require("node:process");
 const rl = require("readline").createInterface({ input, output });
+const { parseArgs } = require("node:util");
 const {
     GunwooError,
     InvalidInputError,
@@ -12,10 +13,22 @@ const {
     InvalidExpressionError,
 } = require("./gunlang_error.js");
 
+const options = {
+    debug: { type: "boolean", short: "d" },
+    file: { type: "string" },
+};
+const { values, positionals } = parseArgs({ options, allowPositionals: true });
+
 function readline(text) {
     return new Promise((resolve) => {
         rl.question(text, resolve);
     });
+}
+
+class Debug {
+    static log(...args) {
+        if (values.debug) console.log(...args);
+    }
 }
 
 let variables = [];
@@ -32,7 +45,7 @@ let variables = [];
  ㅇ우 ㅇㅇ우 -> 변수 1번에 변수 2번 곱하기
 */
 function evalExpr(expr, line) {
-    // console.log("request evalExpr:", expr);
+    Debug.log("request evalExpr:", expr);
     const mul = expr.split(/\s/g);
     let result = [];
     for (let e of mul) {
@@ -109,7 +122,7 @@ function evalExpr(expr, line) {
         result.push(value);
     }
     const finalResult = result.reduce((acc, val) => acc * val, 1);
-    // console.log(expr, "->", finalResult);
+    Debug.log(expr, "->", finalResult);
     return finalResult;
 }
 
@@ -118,7 +131,7 @@ async function runGunwoo_lang(code, line) {
 
     if (code.length === 0) return null; // Skip empty lines
 
-    console.log(line, code);
+    Debug.log(line, code);
 
     const variable = code.match(/거(.+)언(.*)/);
     const numlog = code.match(/^새끼(.+)야$/);
@@ -139,7 +152,7 @@ async function runGunwoo_lang(code, line) {
             variable[2],
             line,
         );
-        // console.log(variables); // debug: print current variables
+        Debug.log(variables); // debug: print current variables
         return null;
     } else if (numlog) {
         // 숫자 콘솔 출력
@@ -169,9 +182,8 @@ async function runGunwoo_lang(code, line) {
 }
 
 async function main() {
-    console.log(!!process.argv[2]);
-    if (!!process.argv[2]) {
-        const code = fs.readFileSync(process.argv[2]).toString().split("\n");
+    if (!!positionals[0]) {
+        const code = fs.readFileSync(positionals[0]).toString().split("\n");
         for (let i = 0; i < code.length; i++) {
             const line = code[i];
             if (line.length == 0) continue;
