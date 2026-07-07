@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "skipFiles": ["<node_internals>/**"],
-            "console": "externalTerminal",
-            "program": "${workspaceFolder}\\runner.js",
-            "args": ["./multiply.gunwoo"]
+            "name": "Launch Gunwoo-lang",
+            "console": "integratedTerminal",
+            "program": "${workspaceFolder}\\gunwoo-lang-node\\runner.js",
+            "cwd": "${workspaceFolder}",
+            "args": ["${file}"]
         }
     ]
 }
