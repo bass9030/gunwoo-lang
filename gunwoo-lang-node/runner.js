@@ -2,10 +2,12 @@ const fs = require("fs");
 const { stdin: input, stdout: output } = require("node:process");
 const rl = require("readline").createInterface({ input, output });
 const {
+    GunwooError,
     InvalidInputError,
     InvalidLineError,
     UnknownStatementError,
     UndefinedVariableError,
+    InvalidJumpTargetError,
     UnexpectedCharacterError,
     InvalidExpressionError,
 } = require("./gunlang_error.js");
@@ -29,9 +31,9 @@ let variables = [];
  ㅇ우!ㅇㅇ우 -> 변수 1번에 변수 2번 빼기
  ㅇ우 ㅇㅇ우 -> 변수 1번에 변수 2번 곱하기
 */
-
 function evalExpr(expr, line) {
-    const mul = expr.split(" ");
+    // console.log("request evalExpr:", expr);
+    const mul = expr.split(/\s/g);
     let result = [];
     for (let e of mul) {
         let i = 0;
@@ -40,21 +42,31 @@ function evalExpr(expr, line) {
         let value = 0;
         while (i < e.length) {
             switch (e[i]) {
-                case "ㅇ":
+                case "ㅇ": {
                     i++;
-                    let varNum = 0;
                     let gunNum = "";
-                    while (e[i] !== "우") {
+                    let depth = 1; // 내가 이미 ㅇ 하나를 열었으니 우 하나를 찾아야 함
+                    while (depth > 0) {
+                        if (e[i] === undefined)
+                            throw new UnexpectedCharacterError(e);
+                        if (e[i] === "ㅇ") depth++;
+                        else if (e[i] === "우") {
+                            depth--;
+                            if (depth === 0) break; // 짝 맞는 우는 gunNum에 포함 안 함
+                        }
                         gunNum += e[i];
                         i++;
                     }
 
-                    varNum = evalExpr(gunNum);
+                    const varNum = evalExpr(gunNum, line);
 
                     if (e[i] !== "우") throw new UnexpectedCharacterError(e);
 
                     if (variables[varNum - 1] === undefined)
-                        throw new UndefinedVariableError("ㅇ" + gunNum + "우");
+                        throw new UndefinedVariableError(
+                            "ㅇ" + gunNum + "우",
+                            line,
+                        );
 
                     if (currentOp === "" || currentOp === "+")
                         value += variables[varNum - 1];
@@ -64,6 +76,7 @@ function evalExpr(expr, line) {
                     isLastOpVar = true;
                     i++;
                     break;
+                }
 
                 case "~":
                     if (isLastOpVar && e[i + 1] === "ㅇ") {
@@ -87,6 +100,9 @@ function evalExpr(expr, line) {
                     value--;
                     i++;
                     break;
+
+                default:
+                    throw new UnexpectedCharacterError(e);
             }
         }
 
@@ -98,22 +114,31 @@ function evalExpr(expr, line) {
 }
 
 async function runGunwoo_lang(code, line) {
+    code = code.split("응아니야")[0].trim(); // Remove comments
+
+    if (code.length === 0) return null; // Skip empty lines
+
+    console.log(line, code);
+
     const variable = code.match(/거(.+)언(.*)/);
     const numlog = code.match(/^새끼(.+)야$/);
     const exit = code.match(/^나가뒤져라(.*)$/);
     const userinput = code.match(/^시발(.+)아$/);
     const textlog = code.match(/^병(.*)신$/);
     const conditi = code.match(/^씹덕(.*)아!(.*)/);
-    const goto = code.match(/^년.+$/);
+    const goto = code.match(/^년(.+)$/);
 
     if (conditi) {
         // 조건문
-        const cond = evalExpr(code.split("씹덕")[1].split("아!")[0], line);
-        const run = code.split("아!")[1];
+        const cond = evalExpr(conditi[1], line);
+        const run = conditi[2];
         if (cond == 0) return await runGunwoo_lang(run);
     } else if (variable) {
         // 변수
-        variables[evalExpr(variable[1]) - 1] = evalExpr(variable[2], line);
+        variables[evalExpr(variable[1], line) - 1] = evalExpr(
+            variable[2],
+            line,
+        );
         // console.log(variables); // debug: print current variables
         return null;
     } else if (numlog) {
@@ -122,24 +147,21 @@ async function runGunwoo_lang(code, line) {
         return null;
     } else if (textlog) {
         // 텍스트 콘솔 출력
-        output.write(
-            String.fromCharCode(
-                evalExpr(code.split("병")[1].split("신")[0], line),
-            ),
-        );
+        output.write(String.fromCharCode(evalExpr(textlog[1], line)));
         return null;
     } else if (userinput) {
         // 사용자 입력
-        const input = parseInt(await readline(""));
-        if (!isNaN(input)) variables[evalExpr(userinput[1]) - 1] = input;
-        else throw new InvalidInputError(input);
+        const input = await readline("");
+        if (!isNaN(input))
+            variables[evalExpr(userinput[1], line) - 1] = parseInt(input);
+        else throw new InvalidInputError(input, line);
         return null;
     } else if (goto) {
-        let tmp = evalExpr(code.split("년")[1], line);
+        let tmp = evalExpr(goto[1], line);
         return { goto: tmp };
     } else if (exit) {
         // 종료
-        let exitcode = evalExpr(code.split("나가뒤져라")[1], line);
+        let exitcode = evalExpr(exit[1], line);
         return { exit: exitcode };
     } else {
         throw new UnknownStatementError(code, line);
@@ -151,13 +173,15 @@ async function main() {
     if (!!process.argv[2]) {
         const code = fs.readFileSync(process.argv[2]).toString().split("\n");
         for (let i = 0; i < code.length; i++) {
-            const line = code[i].split("응아니야")[0].trim();
+            const line = code[i];
             if (line.length == 0) continue;
-            // console.log(i + 1, line); // debug: print current line and command
 
             let result = await runGunwoo_lang(line, i + 1);
             if (result !== null) {
                 if (result?.goto !== undefined) {
+                    if (result.goto < 1 || result.goto > code.length)
+                        throw new InvalidJumpTargetError(result.goto, i + 1);
+
                     i = result.goto - 2;
                     continue;
                 } else if (result?.exit !== undefined) {
@@ -167,14 +191,22 @@ async function main() {
         }
     } else {
         while (true) {
-            const code = await readline("> ");
-            let result = await runGunwoo_lang(code, 1);
-            if (result !== null) {
-                if (result?.goto !== undefined) {
-                    console.log("goto is not supported in REPL mode.");
-                    continue;
-                } else if (result?.exit !== undefined) {
-                    process.exit(result.exit);
+            try {
+                const code = await readline("> ");
+                let result = await runGunwoo_lang(code, 1);
+                if (result !== null) {
+                    if (result?.goto !== undefined) {
+                        console.log("goto is not supported in REPL mode.");
+                        continue;
+                    } else if (result?.exit !== undefined) {
+                        process.exit(result.exit);
+                    }
+                }
+            } catch (e) {
+                if (e instanceof GunwooError) {
+                    console.error(e.message);
+                } else {
+                    console.error("알 수 없는 오류가 발생했습니다:", e);
                 }
             }
         }

@@ -25,20 +25,26 @@ class UnknownStatementError extends GunwooError {
 }
 
 class UndefinedVariableError extends GunwooError {
-    constructor(varName) {
-        super(`변수가 존재하지 않습니다: ${varName}`);
+    constructor(varName, line) {
+        super(`변수가 존재하지 않습니다: ${varName}`, line);
     }
 }
 
 class UnexpectedCharacterError extends GunwooError {
-    constructor(char) {
-        super(`예기치 않은 문자: "${char}"`);
+    constructor(char, line) {
+        super(`예기치 않은 문자: "${char}"`, line);
+    }
+}
+
+class InvalidJumpTargetError extends GunwooError {
+    constructor(targetLine, line) {
+        super(`올바르지 않은 점프 대상: "${targetLine}"`, line);
     }
 }
 
 class InvalidExpressionError extends GunwooError {
-    constructor(expr) {
-        super(`올바르지 않은 식: "${expr}"`);
+    constructor(expr, line) {
+        super(`올바르지 않은 식: "${expr}"`, line);
     }
 }
 
@@ -46,6 +52,7 @@ module.exports = {
     GunwooError,
     InvalidInputError,
     InvalidLineError,
+    InvalidJumpTargetError,
     UnknownStatementError,
     UndefinedVariableError,
     UnexpectedCharacterError,
